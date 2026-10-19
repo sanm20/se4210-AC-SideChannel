@@ -206,9 +206,11 @@
     <p class="desc">
       Drag the slider to change the input size and watch how the amount of work grows for three
       different kinds of code: a normal O(n) loop, an O(n squared) nested loop like a naive regex
-      engine doing extra backtracking, and an exponential blowup like catastrophic backtracking or
-      the Rectangle linked list cycle bug from Problem 4. The y axis is log scale so the
-      exponential line does not fly off the screen immediately.
+      engine doing extra backtracking, and an exponential blowup like catastrophic backtracking in
+      a ReDoS regex. The y axis is log scale so the exponential line does not fly off the screen
+      immediately. (The Rectangle shared-pointer bug from Problem 4 is a different kind of failure,
+      not exponential, it is a cycle that makes the traversal loop and revisit the same nodes
+      instead of terminating, until a counter check catches it.)
     </p>
 
     <label>Input size n = <span id="nVal">10</span></label>
@@ -228,10 +230,13 @@
     </div>
 
     <div class="note">
-      <b>Why this matters:</b> This is the same pattern behind a ReDoS regex (Problem 3) and the
-      shapes catalog bug (Problem 4). The input barely grows, but the amount of work the program
-      has to do rockets upward. That mismatch is exactly what an attacker exploits: a small,
-      normal looking input that quietly makes the program do a huge amount of work or crash.
+      <b>Why this matters:</b> This is the same pattern behind a ReDoS regex (Problem 3), the
+      input barely grows, but the amount of work the program has to do rockets upward. That
+      mismatch is exactly what an attacker exploits: a small, normal looking input that quietly
+      makes the program do a huge amount of work or crash. The shapes catalog bug (Problem 4) is a
+      related but different failure, there the amount of per-step work does not explode, instead a
+      small change in which shapes appear turns a list that should end normally into one that
+      loops and never finds its natural end, until a safety counter catches it.
     </div>
   </div>
 

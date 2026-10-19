@@ -10,7 +10,7 @@ A small, single page, interactive teaching tool built to make two ideas from thi
 
 1. **Timing side channels.** A simulation of the vulnerable password checker from Problem 2. Instead of only telling you right or wrong, the program leaks how many characters in your guess are wrong. You can type guesses yourself, or click "Run Automatic Attack" to watch it crack the password one character at a time in real time, the same strategy used in the actual Problem 2 exploit.
 
-2. **Algorithmic complexity.** A slider driven chart comparing how the amount of work grows for a linear operation, a quadratic operation, and an exponential blowup as input size increases. This is the same shape of problem behind the ReDoS regex in Problem 3 and the shapes catalog bug in Problem 4, a small increase in input size can cause a massive increase in work.
+2. **Algorithmic complexity.** A slider driven chart comparing how the amount of work grows for a linear operation, a quadratic operation, and an exponential blowup as input size increases, the same shape of problem behind the ReDoS regex in Problem 3, where a small increase in input size can cause a massive increase in work. The shapes catalog bug in Problem 4 is a related but distinct failure, a shared static pointer bug that turns a list traversal into a non-terminating loop rather than one that gets exponentially more expensive, and we explain that distinction inside the app itself.
 
 ## How to run it
 
