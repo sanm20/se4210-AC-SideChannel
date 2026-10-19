@@ -14,7 +14,7 @@ A small, single page, interactive teaching tool built to make two ideas from thi
 
 ## How to run it
 
-This is a single self contained HTML file with no build step and no external dependencies. Just open `index.html` in any modern browser, or visit the GitHub Pages / Netlify link if one is set up for this repo.
+This is a single self contained HTML file with no build step and no external dependencies. Just open `index.html` in any modern browser.
 
 ## Files
 
