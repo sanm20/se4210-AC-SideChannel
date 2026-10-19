@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Side Channels & Algorithmic Complexity, Visualized</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161925;
+    --panel2: #1e2230;
+    --accent: #5eead4;
+    --accent2: #f87171;
+    --accent3: #60a5fa;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #2a2f3f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+  }
+  .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 0.95rem; }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #05140f;
+    font-weight: 600;
+    border-color: var(--accent);
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    display: none;
+  }
+  .panel.active { display: block; }
+  h2 { margin-top: 0; font-size: 1.25rem; }
+  p.desc { color: var(--muted); line-height: 1.5; font-size: 0.92rem; }
+  label { display: block; margin: 14px 0 6px; font-size: 0.88rem; color: var(--muted); }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-family: 'Consolas', monospace;
+    font-size: 0.95rem;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  button {
+    margin-top: 14px;
+    background: var(--accent);
+    color: #05140f;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-right: 8px;
+  }
+  button.secondary {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .col { flex: 1; min-width: 260px; }
+  .guess-display {
+    font-family: 'Consolas', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+    margin: 14px 0;
+    padding: 14px;
+    background: var(--panel2);
+    border-radius: 8px;
+    word-break: break-all;
+  }
+  .char-box {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .char-correct { background: rgba(94,234,212,0.25); color: var(--accent); }
+  .char-wrong { color: var(--muted); }
+  .stat-row { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .stat {
+    background: var(--panel2);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .stat b { color: var(--text); font-size: 1.1rem; display: block; }
+  .log {
+    margin-top: 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-family: 'Consolas', monospace;
+    font-size: 0.82rem;
+    background: #0b0d13;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  .log div { padding: 2px 0; color: var(--muted); }
+  .log div.hit { color: var(--accent); }
+  canvas { width: 100%; background: var(--panel2); border-radius: 10px; margin-top: 14px; }
+  .note {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: rgba(96,165,250,0.08);
+    border-left: 3px solid var(--accent3);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .legend { display:flex; gap:16px; margin-top:10px; font-size:0.8rem; color: var(--muted); flex-wrap: wrap;}
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+  footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Side Channels &amp; Algorithmic Complexity, Visualized</h1>
+  <p class="subtitle">SE/CprE 4210, Software Analysis and Verification. Team 7, TEAMHacker.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="timing">Timing Side Channel</button>
+    <button class="tab-btn" data-tab="complexity">Algorithmic Complexity</button>
+  </div>
+
+  <!-- TAB 1: TIMING SIDE CHANNEL -->
+  <div class="panel active" id="timing">
+    <h2>Cracking a Password One Character at a Time</h2>
+    <p class="desc">
+      This simulates the vulnerable password checker from Learning Sprint 3. Instead of just
+      saying "right" or "wrong," the program leaks how many characters are wrong in your guess.
+      That single extra number is a side channel: it lets you solve the password one position at
+      a time instead of guessing the whole thing at once.
+    </p>
+
+    <div class="row">
+      <div class="col">
+        <label>Secret password (this is what you are trying to crack)</label>
+        <input type="text" id="secretInput" value="password123" maxlength="20">
+
+        <label>Your guess</label>
+        <input type="text" id="guessInput" maxlength="20" placeholder="type a guess the same length as the secret">
+        <button id="checkBtn">Check Guess</button>
+        <button class="secondary" id="autoBtn">Run Automatic Attack</button>
+        <button class="secondary" id="resetBtn">Reset</button>
+      </div>
+      <div class="col">
+        <div class="guess-display" id="guessDisplay">&nbsp;</div>
+        <div class="stat-row">
+          <div class="stat"><span id="mismatchStat">-</span><b id="mismatchVal">0</b></div>
+          <div class="stat">Attempts so far<b id="attemptVal">0</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="log" id="attackLog"></div>
+
+    <div class="note">
+      <b>Why this matters:</b> A secure comparison should only ever tell you match or no match.
+      This program instead tells you <i>how close</i> you are, which is exactly the kind of leak
+      we covered with length checks and mismatch counts. The automatic attack button runs the
+      same character by character strategy from Problem 2, locking in one correct character at a
+      time instead of brute forcing the whole password.
+    </div>
+  </div>
+
+  <!-- TAB 2: ALGORITHMIC COMPLEXITY -->
+  <div class="panel" id="complexity">
+    <h2>How Fast Does the Work Grow?</h2>
+    <p class="desc">
+      Drag the slider to change the input size and watch how the amount of work grows for three
+      different kinds of code: a normal O(n) loop, an O(n squared) nested loop like a naive regex
+      engine doing extra backtracking, and an exponential blowup like catastrophic backtracking or
+      the Rectangle linked list cycle bug from Problem 4. The y axis is log scale so the
+      exponential line does not fly off the screen immediately.
+    </p>
+
+    <label>Input size n = <span id="nVal">10</span></label>
+    <input type="range" id="nSlider" min="1" max="40" value="10">
+
+    <canvas id="chart" height="260"></canvas>
+    <div class="legend">
+      <span><span class="dot" style="background:#60a5fa"></span>O(n), linear</span>
+      <span><span class="dot" style="background:#fbbf24"></span>O(n squared), quadratic</span>
+      <span><span class="dot" style="background:#f87171"></span>O(2^n), exponential</span>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat">Linear steps<b id="linVal">0</b></div>
+      <div class="stat">Quadratic steps<b id="quadVal">0</b></div>
+      <div class="stat">Exponential steps<b id="expVal">0</b></div>
+    </div>
+
+    <div class="note">
+      <b>Why this matters:</b> This is the same pattern behind a ReDoS regex (Problem 3) and the
+      shapes catalog bug (Problem 4). The input barely grows, but the amount of work the program
+      has to do rockets upward. That mismatch is exactly what an attacker exploits: a small,
+      normal looking input that quietly makes the program do a huge amount of work or crash.
+    </div>
+  </div>
+
+  <footer>Built for SE/CprE 4210 Learning Sprint 3, Problem 5. No external data collected, everything runs locally in your browser.</footer>
+</div>
+
+<script>
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    // the complexity canvas has zero size while its tab is hidden (display:none),
+    // so redraw it once it actually becomes visible.
+    if (btn.dataset.tab === 'complexity') {
+      resizeCanvas();
+    }
+  });
+});
+
+// ---------- Timing Side Channel Demo ----------
+const secretInput = document.getElementById('secretInput');
+const guessInput = document.getElementById('guessInput');
+const guessDisplay = document.getElementById('guessDisplay');
+const mismatchStat = document.getElementById('mismatchStat');
+const mismatchVal = document.getElementById('mismatchVal');
+const attemptVal = document.getElementById('attemptVal');
+const attackLog = document.getElementById('attackLog');
+const checkBtn = document.getElementById('checkBtn');
+const autoBtn = document.getElementById('autoBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let attempts = 0;
+
+function diffCount(secret, guess) {
+  if (secret.length !== guess.length) return null; // length mismatch, instant reject
+  let diff = 0;
+  for (let i = 0; i < secret.length; i++) {
+    if (secret[i] !== guess[i]) diff++;
+  }
+  return diff;
+}
+
+function renderGuess(secret, guess) {
+  let html = '';
+  for (let i = 0; i < guess.length; i++) {
+    const correct = secret[i] === guess[i];
+    html += `<span class="char-box ${correct ? 'char-correct' : 'char-wrong'}">${guess[i]}</span>`;
+  }
+  guessDisplay.innerHTML = html || '&nbsp;';
+}
+
+function logLine(text, hit) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  if (hit) div.classList.add('hit');
+  attackLog.prepend(div);
+}
+
+checkBtn.addEventListener('click', () => {
+  const secret = secretInput.value;
+  const guess = guessInput.value;
+  if (!guess) return;
+  attempts++;
+  attemptVal.textContent = attempts;
+  const d = diffCount(secret, guess);
+  renderGuess(secret, guess);
+  if (d === null) {
+    mismatchStat.textContent = 'Length check';
+    mismatchVal.textContent = 'rejected';
+    logLine(`guess "${guess}" -> wrong length, rejected instantly`, false);
+  } else {
+    mismatchStat.textContent = 'Mismatched characters';
+    mismatchVal.textContent = d;
+    logLine(`guess "${guess}" -> ${d} character(s) wrong`, d === 0);
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  attempts = 0;
+  attemptVal.textContent = 0;
+  mismatchStat.textContent = '-';
+  mismatchVal.textContent = '0';
+  guessDisplay.innerHTML = '&nbsp;';
+  attackLog.innerHTML = '';
+  guessInput.value = '';
+});
+
+autoBtn.addEventListener('click', async () => {
+  const secret = secretInput.value;
+  if (!secret) return;
+  autoBtn.disabled = true;
+  checkBtn.disabled = true;
+  attackLog.innerHTML = '';
+  attempts = 0;
+
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let guess = 'a'.repeat(secret.length).split('');
+
+  let baseline = diffCount(secret, guess.join(''));
+  attempts++;
+  attemptVal.textContent = attempts;
+  renderGuess(secret, guess.join(''));
+  mismatchStat.textContent = 'Mismatched characters';
+  mismatchVal.textContent = baseline;
+  logLine(`baseline guess "${guess.join('')}" -> ${baseline} wrong`, false);
+  await sleep(350);
+
+  for (let pos = 0; pos < secret.length; pos++) {
+    let found = false;
+    for (const ch of charset) {
+      if (ch === guess[pos]) continue;
+      const trial = guess.slice();
+      trial[pos] = ch;
+      const d = diffCount(secret, trial.join(''));
+      attempts++;
+      attemptVal.textContent = attempts;
+      if (d === baseline - 1) {
+        guess[pos] = ch;
+        baseline = d;
+        found = true;
+        renderGuess(secret, guess.join(''));
+        mismatchVal.textContent = baseline;
+        logLine(`position ${pos}: '${ch}' confirmed, mismatches now ${baseline}`, true);
+        await sleep(120);
+        break;
+      }
+    }
+    if (!found) {
+      logLine(`position ${pos}: '${guess[pos]}' was already correct`, true);
+    }
+  }
+
+  logLine(`cracked password: "${guess.join('')}" using ${attempts} attempts instead of brute forcing all combinations`, true);
+  autoBtn.disabled = false;
+  checkBtn.disabled = false;
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ---------- Algorithmic Complexity Chart ----------
+const nSlider = document.getElementById('nSlider');
+const nVal = document.getElementById('nVal');
+const linVal = document.getElementById('linVal');
+const quadVal = document.getElementById('quadVal');
+const expVal = document.getElementById('expVal');
+const canvas = document.getElementById('chart');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  // While the complexity tab is hidden (display:none), clientWidth/clientHeight
+  // are 0. Skip resizing then so we don't permanently collapse the canvas.
+  if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * ratio;
+  canvas.height = canvas.clientHeight * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  drawChart(parseInt(nSlider.value, 10));
+}
+
+function drawChart(n) {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const maxN = 40;
+  const padding = { left: 40, right: 10, top: 10, bottom: 20 };
+  const plotW = w - padding.left - padding.right;
+  const plotH = h - padding.top - padding.bottom;
+
+  // log scale max based on exponential at maxN (capped to avoid absurd numbers)
+  const expCap = Math.min(Math.pow(2, maxN), 1e12);
+  const logMax = Math.log10(expCap);
+
+  function xPos(i) { return padding.left + (i / maxN) * plotW; }
+  function yPos(val) {
+    const v = Math.max(val, 1);
+    const logV = Math.log10(v);
+    return padding.top + plotH - (logV / logMax) * plotH;
+  }
+
+  // gridlines
+  ctx.strokeStyle = '#2a2f3f';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (plotH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(w - padding.right, y);
+    ctx.stroke();
+  }
+
+  function plot(fn, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 1; i <= maxN; i++) {
+      const val = fn(i);
+      const x = xPos(i);
+      const y = yPos(val);
+      if (i === 1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  plot(i => i, '#60a5fa');
+  plot(i => i * i, '#fbbf24');
+  plot(i => Math.min(Math.pow(2, i), expCap), '#f87171');
+
+  // marker for current n
+  const markX = xPos(n);
+  ctx.strokeStyle = '#9ca3af';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(markX, padding.top);
+  ctx.lineTo(markX, h - padding.bottom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  [
+    { fn: i => i, color: '#60a5fa' },
+    { fn: i => i * i, color: '#fbbf24' },
+    { fn: i => Math.min(Math.pow(2, i), expCap), color: '#f87171' }
+  ].forEach(s => {
+    const val = s.fn(n);
+    const y = yPos(val);
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(markX, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function updateStats(n) {
+  linVal.textContent = n.toLocaleString();
+  quadVal.textContent = (n * n).toLocaleString();
+  const expValue = Math.pow(2, n);
+  expVal.textContent = expValue > 1e12 ? expValue.toExponential(2) : expValue.toLocaleString();
+}
+
+nSlider.addEventListener('input', () => {
+  const n = parseInt(nSlider.value, 10);
+  nVal.textContent = n;
+  updateStats(n);
+  drawChart(n);
+});
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('load', () => {
+  resizeCanvas();
+  updateStats(parseInt(nSlider.value, 10));
+});
+</script>
+</body>
+</html>
